@@ -1,4 +1,6 @@
 #-*- coding: utf-8 -*-
+from functools import update_wrapper
+
 from django.http import HttpResponseRedirect
 from django.contrib import admin
 from django import forms
@@ -6,7 +8,6 @@ from django.http import HttpResponse
 from django.core.urlresolvers import reverse
 from django.core.mail import message
 from django.db.models import Count
-from django.utils.functional import update_wrapper
 from django.utils.translation import ugettext as _
 from django.template.defaultfilters import linebreaks_filter
 
@@ -29,6 +30,8 @@ class AttachmentInlineAdmin(admin.TabularInline):
     fields = ('file_link', 'mimetype',)
 
     def file_link(self, obj):
+        if not obj.email_id:
+            return "N/A"
         url_name = '%s:%s_email_attachment' % (self.admin_site.name, self.model._meta.app_label,)
         kwargs={
             'email_id': str(obj.email_id),
@@ -46,7 +49,7 @@ class EmailAdmin(admin.ModelAdmin):
     exclude = ('raw', 'body')
     readonly_fields = list_display + ('cc_emails', 'bcc_emails', 'all_recipients', 'headers', 'body_br',)
     inlines = (AttachmentInlineAdmin,)
-    
+
     def queryset(self, request):
         queryset = super(EmailAdmin, self).queryset(request)
         return queryset.annotate(attachment_count_cache=Count('attachments'))
@@ -54,7 +57,7 @@ class EmailAdmin(admin.ModelAdmin):
     def attachment_count(self, obj):
         return obj.attachment_count
     attachment_count.admin_order_field = 'attachment_count_cache'
-    
+
     def body_stripped(self, obj):
         if obj.body and len(obj.body)>100:
             return obj.body[:100] + ' [...]'
@@ -64,7 +67,7 @@ class EmailAdmin(admin.ModelAdmin):
 
     def get_urls(self):
         urlpatterns = super(EmailAdmin, self).get_urls()
-        from django.conf.urls.defaults import patterns, url
+        from django.conf.urls import patterns, url, include
 
         def wrap(view):
             def wrapper(*args, **kwargs):
@@ -84,7 +87,7 @@ class EmailAdmin(admin.ModelAdmin):
         if not self.has_change_permission(request, None):
             raise PermissionDenied
         attachment = Attachment.objects.get(email__id=email_id, id=attachment_id, filename=filename)
-        response = HttpResponse(attachment.content, mimetype=attachment.mimetype or 'application/octet-stream')
+        response = HttpResponse(attachment.content, content_type=attachment.mimetype or 'application/octet-stream')
         response["Content-Length"] = len(attachment.content)
         return response
 
@@ -110,6 +113,7 @@ class SendEmail(Email):
 class SendEmailForm(forms.ModelForm):
     class Meta:
         model = SendEmail
+        exclude = tuple()
         widgets = {
             'from_email': forms.TextInput(attrs={'size': '30'}),
             'to_emails': forms.TextInput(attrs={'size': WIDE_INPUT_SIZE}),
@@ -117,7 +121,7 @@ class SendEmailForm(forms.ModelForm):
             'bcc_emails': forms.TextInput(attrs={'size': WIDE_INPUT_SIZE}),
             'subject': forms.TextInput(attrs={'size': WIDE_INPUT_SIZE}),
         }
-        
+
 
 
 class SendEmailAdmin(admin.ModelAdmin):
@@ -129,7 +133,7 @@ class SendEmailAdmin(admin.ModelAdmin):
             'classes': ('collapse',)}),
         (None, {'fields': ('subject', 'body')}),
     )
-    
+
     def save_model(self, request, obj, form, change):
         """
         sends the email and does not save it

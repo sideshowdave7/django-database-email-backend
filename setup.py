@@ -4,7 +4,7 @@ version = __import__('database_email_backend').__version__
 setup(
     name = "django-database-email-backend",
     version = version,
-    url = 'http://github.com/stefanfoulis/django-database-email-backend',
+    url = 'http://github.com/enderlabs/django-database-email-backend',
     license = 'BSD',
     platforms=['OS Independent'],
     description = "A django EmailBackend for debugging that saves Emails in the database instead of delivering them.",
