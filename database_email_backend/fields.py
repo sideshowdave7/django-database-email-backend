@@ -1,6 +1,7 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import base64
 from django.db import models
+
 
 # Stolen from http://djangosnippets.org/snippets/1669/
 class Base64Field(models.TextField):
@@ -18,4 +19,3 @@ class Base64Field(models.TextField):
     def set_data(self, obj, data):
         if data is not None:
             setattr(obj, self.field_name, base64.encodestring(data))
-

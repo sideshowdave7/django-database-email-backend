@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 from functools import update_wrapper
 
 from django.http import HttpResponseRedirect
@@ -32,22 +32,27 @@ class AttachmentInlineAdmin(admin.TabularInline):
     def file_link(self, obj):
         if not obj.email_id:
             return "N/A"
-        url_name = '%s:%s_email_attachment' % (self.admin_site.name, self.model._meta.app_label,)
-        kwargs={
+        url_name = '%s:%s_email_attachment' % (self.admin_site.name,
+                                               self.model._meta.app_label,)
+        kwargs = {
             'email_id': str(obj.email_id),
             'attachment_id': str(obj.id),
-            'filename': str(obj.filename)}
+            'filename': str(obj.filename)
+            }
         url = reverse(url_name, kwargs=kwargs)
-        return u'<a href="%(url)s">%(filename)s</a>' % {'filename': obj.filename, 'url': url}
+        return u'<a href="%(url)s">%(fname)s</a>' % {'fname': obj.filename,
+                                                     'url': url}
     file_link.allow_tags = True
 
 
 class EmailAdmin(admin.ModelAdmin):
-    list_display = ('from_email', 'reply_to', 'to_emails', 'subject', 'body_stripped', 'sent_at', 'attachment_count')
+    list_display = ('from_email', 'reply_to', 'to_emails', 'subject',
+                    'body_stripped', 'sent_at', 'attachment_count')
     date_hierarchy = 'sent_at'
-    search_fields =  ('from_email', 'to_emails', 'subject', 'body',)
+    search_fields = ('from_email', 'to_emails', 'subject', 'body',)
     exclude = ('raw', 'body')
-    readonly_fields = list_display + ('cc_emails', 'bcc_emails', 'all_recipients', 'headers', 'body_br',)
+    readonly_fields = list_display + ('cc_emails', 'bcc_emails',
+                                      'all_recipients', 'headers', 'body_br',)
     inlines = (AttachmentInlineAdmin,)
 
     def queryset(self, request):
@@ -59,7 +64,7 @@ class EmailAdmin(admin.ModelAdmin):
     attachment_count.admin_order_field = 'attachment_count_cache'
 
     def body_stripped(self, obj):
-        if obj.body and len(obj.body)>100:
+        if obj.body and len(obj.body) > 100:
             return obj.body[:100] + ' [...]'
         return obj.body
     body_stripped.short_description = 'body'
@@ -76,18 +81,26 @@ class EmailAdmin(admin.ModelAdmin):
 
         appname = self.model._meta.app_label
 
-        urlpatterns = patterns('',
-            url(r'^(?P<email_id>\d+)/attachments/(?P<attachment_id>\d+)/(?P<filename>[\w.]+)$',
+        urlpatterns = patterns(
+            '',
+            url(r'^(?P<email_id>\d+)/attachments/(?P<attachment_id>\d+)/'
+                r'(?P<filename>[\w.]+)$',
                 wrap(self.serve_attachment),
                 name='%s_email_attachment' % appname)
         ) + urlpatterns
         return urlpatterns
 
-    def serve_attachment(self, request, email_id, attachment_id, filename, extra_context=None):
+    def serve_attachment(self, request, email_id, attachment_id, filename,
+                         extra_context=None):
         if not self.has_change_permission(request, None):
             raise PermissionDenied
-        attachment = Attachment.objects.get(email__id=email_id, id=attachment_id, filename=filename)
-        response = HttpResponse(attachment.content, content_type=attachment.mimetype or 'application/octet-stream')
+        attachment = Attachment.objects.get(email__id=email_id,
+                                            id=attachment_id,
+                                            filename=filename)
+        response = HttpResponse(attachment.content,
+                                content_type=attachment.mimetype or
+                                'application/octet-stream')
+
         response["Content-Length"] = len(attachment.content)
         return response
 
@@ -123,11 +136,10 @@ class SendEmailForm(forms.ModelForm):
         }
 
 
-
 class SendEmailAdmin(admin.ModelAdmin):
     form = SendEmailForm
     fieldsets = (
-        (None, {'fields':('from_email', 'to_emails')}),
+        (None, {'fields': ('from_email', 'to_emails')}),
         (_('cc and bcc'), {
             'fields': ('cc_emails', 'bcc_emails'),
             'classes': ('collapse',)}),
