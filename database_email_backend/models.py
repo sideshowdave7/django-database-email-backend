@@ -11,6 +11,7 @@ class Email(models.Model):
     bcc_emails = models.TextField(blank=True, default='')
     all_recipients = models.TextField(blank=True, default='')
     headers =  models.TextField(blank=True, default='')
+    reply_to = models.CharField(blank=True, default='', max_length=255)
 
     subject = models.TextField(blank=True, default='')
     body = models.TextField(blank=True, default='')
