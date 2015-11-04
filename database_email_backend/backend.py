@@ -1,4 +1,4 @@
-#-*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 from email.MIMEBase import MIMEBase
 
 from django.core.mail.backends.base import BaseEmailBackend
@@ -11,14 +11,15 @@ class DatabaseEmailBackend(BaseEmailBackend):
     def send_messages(self, email_messages):
         for message in email_messages:
             email = Email.objects.create(
-                from_email = u'%s' % message.from_email,
-                to_emails = u', '.join(message.to),
-                cc_emails = u', '.join(message.cc),
-                bcc_emails = u', '.join(message.bcc),
-                all_recipients = u', '.join(message.recipients()),
-                subject = u'%s' % message.subject,
-                body = u'%s' % message.body,
-                raw = u'%s' % smart_unicode(message.message().as_string())
+                from_email=u'%s' % message.from_email,
+                to_emails=u', '.join(message.to),
+                cc_emails=u', '.join(message.cc),
+                bcc_emails=u', '.join(message.bcc),
+                all_recipients=u', '.join(message.recipients()),
+                subject=u'%s' % message.subject,
+                body=u'%s' % message.body,
+                raw=u'%s' % smart_unicode(message.message().as_string()),
+                reply_to=u', '.join(message.reply_to)
             )
             for attachment in message.attachments:
                 if isinstance(attachment, tuple):
@@ -36,4 +37,3 @@ class DatabaseEmailBackend(BaseEmailBackend):
                     mimetype=mimetype
                 )
         return len(email_messages)
-
